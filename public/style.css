@@ -1,0 +1,635 @@
+/* איפוס הגדרות בסיסי */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Rubik', sans-serif;
+    background-color: #fcfcfc;
+    color: #333;
+    direction: rtl;
+}
+
+/* כותרת עליונה - Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px; /* קצת הקטנתי את הפאדינג */
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.hamburger-menu {
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* עדכון ללוגו שהוא תמונה */
+.logo {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.logo-img {
+    height: 40px; /* קובע גובה קבוע */
+    width: auto;  /* שומר פרופורציות */
+    object-fit: contain;
+}
+
+/* כותרת הדף */
+.container {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-top: 20px;
+    margin-bottom: 40px;
+    color: #000;
+}
+
+/* גריד הכפתורים */
+.grid-menu {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    justify-items: center;
+}
+
+.menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    width: 100px;
+    cursor: pointer;
+}
+
+.icon-circle {
+    width: 90px;
+    height: 90px;
+    background-color: #f0f4f8;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.menu-item:not(.disabled):active .icon-circle {
+    background-color: #e2e8f0;
+    transform: scale(0.95);
+}
+
+.img-icon {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+}
+
+.label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #333;
+    text-align: center;
+}
+
+.menu-item.disabled {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.grayscale {
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
+
+.badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background-color: #dbeafe;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 2;
+}
+
+.badge::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 10px; 
+    border-width: 6px 6px 0;
+    border-style: solid;
+    border-color: #dbeafe transparent transparent transparent;
+    transform: rotate(20deg);
+}
+
+/* הגדרות מסכים ואנימציות */
+.screen {
+    opacity: 0; 
+    transition: opacity 0.3s ease-in-out;
+}
+
+.screen.fade-in {
+    opacity: 1;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* עיצוב טופס מודרני */
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-weight: 500;
+    margin-bottom: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.form-title {
+    font-size: 1.5rem;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.form-subtitle {
+    color: #64748b;
+    margin-bottom: 30px;
+    font-size: 0.9rem;
+}
+
+.modern-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.form-group small {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background-color: #fff;
+    font-family: 'Rubik', sans-serif;
+    font-size: 1rem;
+    color: #333;
+    transition: all 0.2s;
+    outline: none;
+    appearance: none;
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* שדה קוד מיוחד (OTP) */
+.otp-field {
+    text-align: center;
+    letter-spacing: 5px;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #4a90e2;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.select-wrapper {
+    position: relative;
+}
+
+.select-arrow {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.grid-2-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.submit-btn {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #4a90e2 0%, #2563eb 100%);
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.submit-btn:active {
+    transform: scale(0.98);
+    box-shadow: none;
+}
+
+.submit-btn:disabled {
+    background: #cbd5e1;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.locked-input {
+    background-color: #e9ecef; /* אפור בהיר */
+    color: #495057; /* טקסט אפור כהה */
+    cursor: not-allowed; /* סמן של 'אסור' */
+    border: 1px solid #ced4da;
+}
+
+.locked-input:focus {
+    outline: none; /* שלא יהיה מסגרת כחולה בלחיצה */
+    border-color: #ced4da;
+}
+
+/* === תפריט צד (Sidebar) === */
+
+/* רקע כהה שמכסה את המסך כשהתפריט פתוח */
+.nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* שחור חצי שקוף */
+    z-index: 998; /* מתחת לתפריט אבל מעל הכל */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.nav-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* התפריט עצמו */
+.side-nav {
+    position: fixed;
+    top: 0;
+    right: -280px; /* מוסתר מחוץ למסך מימין */
+    width: 280px;
+    height: 100%;
+    background-color: white;
+    z-index: 999; /* הכי גבוה */
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.side-nav.active {
+    right: 0; /* החלקה פנימה */
+}
+
+/* כותרת התפריט */
+.nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    background-color: #f8fafc;
+}
+
+.nav-logo {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #1e293b;
+}
+
+.close-btn {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #64748b;
+    padding: 5px;
+}
+
+/* רשימת הלינקים */
+.nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.nav-links li {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f8f8f8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #334155;
+    transition: background 0.2s;
+    font-size: 1rem;
+}
+
+.nav-links li:hover {
+    background-color: #f1f5f9;
+    color: #2563eb;
+}
+
+.nav-links li i {
+    width: 25px; /* יישור אייקונים */
+    color: #94a3b8;
+}
+
+.nav-links li:hover i {
+    color: #2563eb;
+}
+
+/* כפתור התנתקות מיוחד */
+.logout-link {
+    color: #ef4444 !important; /* אדום */
+    margin-top: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.logout-link i {
+    color: #ef4444 !important;
+}
+
+.nav-footer {
+    padding: 20px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+}
+
+/* גריד לכרטיסיות */
+.tickets-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-bottom: 20px;
+}
+
+/* עיצוב הכרטיסייה הבודדת */
+.ticket-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #f1f5f9;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.ticket-card:active {
+    transform: scale(0.98);
+}
+
+/* פס צבע בצד ימין ליופי */
+.ticket-card::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background-color: #cbd5e1; /* ברירת מחדל אפור */
+}
+
+/* תגית סטטוס (כמו בתמונה שלך) */
+.status-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background-color: #dbeafe;
+    color: #2563eb;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 8px;
+}
+
+/* צבעים לפי סטטוס */
+.status-open::before { background-color: #3b82f6; } /* כחול */
+.status-open .status-badge { background-color: #dbeafe; color: #1e40af; }
+
+.status-closed::before { background-color: #10b981; } /* ירוק */
+.status-closed .status-badge { background-color: #d1fae5; color: #065f46; }
+
+.ticket-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.ticket-id {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 15px;
+}
+
+.ticket-footer {
+    display: flex;
+    justify-content: flex-end; /* תאריך בצד שמאל כמו בתמונה */
+    margin-top: 10px;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 10px;
+}
+
+.timestamp {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    font-family: monospace; /* גופן מונוספייס למספרים */
+    letter-spacing: 0.5px;
+}
+
+/* === עיצוב המודאל (החלון הקופץ) === */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    backdrop-filter: blur(3px);
+}
+
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 20px;
+    padding: 25px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.close-modal {
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 5px;
+}
+
+.detail-row {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #f8fafc;
+    padding-bottom: 8px;
+}
+
+.detail-row.full-width {
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.detail-value {
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.detail-text {
+    background: #f8fafc;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #334155;
+}
+
+.status-badge-large {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    background-color: #dbeafe; 
+    color: #1e40af;
+}
+
+.detail-footer {
+    margin-top: 20px;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+}
+
+
+/* === צבעים לפי סוג פנייה === */
+
+/* 1. אישור כניסה - כחול */
+.type-entry-permit::before {
+    background-color: #2563eb !important; /* כחול רויאל */
+}
+/* אופציונלי: שינוי צבע הכותרת שתתאים לפס */
+.type-entry-permit {
+    color: #1e40af;
+}
+
+/* 2. בינוי ואחזקה - חום/כתום-אדמה */
+.type-maintenance::before {
+    background-color: #d97706 !important; /* חום-אמבר */
+}
+.type-maintenance {
+    color: #92400e;
+}
+
+/* 3. מחשוב - סגול */
+.type-computing::before {
+    background-color: #9333ea !important; /* סגול */
+}
+.type-computing {
+    color: #6b21a8;
+}
+
+/* ברירת מחדל (אפור) למקרה שמשהו לא מוגדר */
+.type-default::before {
+    background-color: #94a3b8 !important;
+}
