@@ -94,6 +94,46 @@ app.post('/api/auth/send-otp', otpLimiter);
 //// END-RATE-LIMITER //////// END-RATE-LIMITER //////// END-RATE-LIMITER ////
 
 
+// === פונקציית עזר: קבלת הרשאות לפי טלפון ===
+// === פונקציה: קבלת הרשאות מתוך טוקן ===
+async function get_user_permissions(phoneNumber) {
+    // הגנה בסיסית: אם אין טלפון, אין הרשאות
+    if (!phoneNumber) {
+        return [];
+    }
+
+    const roles = [];
+
+    try {
+        // 1. שליפת כל מסמכי התפקידים מקולקשיין ההרשאות
+        const permissionsSnapshot = await db.collection('permissions').get();
+
+        if (permissionsSnapshot.empty) {
+            return []; // לא הוגדרו תפקידים במערכת בכלל
+        }
+
+        // 2. מעבר על כל מסמך (כל מסמך מייצג תפקיד, למשל 'admins')
+        permissionsSnapshot.forEach(doc => {
+            const roleName = doc.id;       // שם המסמך = שם התפקיד
+            const authorizedUsers = doc.data(); // רשימת המשתמשים בתוך המסמך
+
+            // 3. בדיקה: האם מספר הטלפון קיים כשדה והערך שלו הוא true?
+            if (authorizedUsers[phoneNumber] === true) {
+                roles.push(roleName);
+            }
+        });
+
+        // לוג לצורך דיבאג (אופציונלי - ניתן למחוק ב-Production)
+        console.log(`Permissions found for ${phoneNumber}:`, roles);
+        
+        return roles;
+
+    } catch (error) {
+        console.error("Error inside get_user_permissions:", error);
+        return []; // במקרה של שגיאה, מחזירים מערך ריק כדי לא לתקוע את השרת
+    }
+}
+
 // פונקציית עזר לאבטחה
 function authenticateToken(req, res, next) {
     // הטוקן מגיע בכותרת: Authorization: Bearer <TOKEN>
@@ -379,19 +419,39 @@ app.post('/api/entry/create', async (req, res) => {
 
 // === נתיב מיוחד: טעינת ה-HTML של המערכת ===
 // שים לב: משתמש ב-authenticateToken כדי להגן על הקוד!
-app.get('/api/resource/dashboard-html', authenticateToken, (req, res) => {
-    // בניית הנתיב לקובץ המוגן
-    const filePath = path.join(__dirname, '..', 'private', 'dashboard.html');
-    
-    // קריאת הקובץ
-    fs.readFile(filePath, 'utf8', (err, htmlData) => {
-        if (err) {
-            console.error("Error reading dashboard HTML:", err);
-            return res.status(500).send("Error loading system");
+app.get('/api/resource/dashboard-html', authenticateToken, async (req, res) => {
+    try {
+        // 1. בדיקת הרשאות לפי הטלפון בטוקן
+        const userPermissions = await get_user_permissions(req.user.phone);
+        console.log(`User: ${req.user.phone}, Roles: ${userPermissions}`);
+
+        // 2. קביעת שם הקובץ - החלפה מלאה
+        let filename = 'dashboard.html'; // ברירת מחדל
+
+        // אם יש הרשאות כלשהן (המערך לא ריק) -> טוענים את ממשק המנהל
+        if (userPermissions.length > 0) {
+            filename = 'admin.html';
         }
-        // שליחת ה-HTML כטקסט פשוט
-        res.send(htmlData);
-    });
+
+        // 3. בניית הנתיב לקובץ הנבחר
+        const filePath = path.join(__dirname, '..', 'private', filename);
+        
+        // 4. קריאת הקובץ ושליחתו AS-IS (כמו שהוא)
+        fs.readFile(filePath, 'utf8', (err, htmlData) => {
+            if (err) {
+                console.error(`Error reading ${filename}:`, err);
+                return res.status(500).send("Error loading system file");
+            }
+            
+            // שולחים את הקובץ השלם.
+            // אין כאן שום logic של replace או הזרקה. זה קובץ אחר לגמרי.
+            res.send(htmlData);
+        });
+
+    } catch (error) {
+        console.error("Route Error:", error);
+        res.status(500).send("Server Error");
+    }
 });
 
 // === נתיב להגשת קבצי JS מוגנים ===
@@ -414,6 +474,61 @@ app.get('/api/resource/js/:filename', authenticateToken, (req, res) => {
     res.sendFile(filePath);
 });
 
+// === נתיב אדמין: משיכת כל הנתונים (בינוי + אישורים) ===
+app.get('/api/admin/all-data', authenticateToken, async (req, res) => {
+    try {
+        console.log("Admin fetching all data...");
+
+        // שליפת שתי הקולקציות במקביל
+        const [maintenanceSnap, entrySnap] = await Promise.all([
+            db.collection('maintenance_reports').get(),
+            db.collection('entry_permits').get()
+        ]);
+
+        let allTickets = [];
+
+        // פונקציית עזר לפרמוט תאריך
+        const parseDate = (timestamp) => {
+            if (!timestamp || !timestamp.toDate) return new Date().toISOString();
+            return timestamp.toDate().toISOString();
+        };
+
+        // 1. עיבוד תקלות בינוי
+        maintenanceSnap.forEach(doc => {
+            const d = doc.data();
+            allTickets.push({
+                id: doc.id,
+                ...d,
+                // אם אין סוג מוגדר, נגדיר כ'general'
+                type: d.type || 'general', 
+                // חשוב לדעת מאיפה זה הגיע כדי שנוכל לערוך אחר כך
+                collectionType: 'maintenance_reports',
+                createdAtStr: parseDate(d.createdAt)
+            });
+        });
+
+        // 2. עיבוד אישורי כניסה
+        entrySnap.forEach(doc => {
+            const d = doc.data();
+            allTickets.push({
+                id: doc.id,
+                ...d,
+                type: 'entry_permit', // מזהה סוג קבוע
+                collectionType: 'entry_permits',
+                createdAtStr: parseDate(d.createdAt)
+            });
+        });
+
+        // 3. מיון לפי תאריך (החדש ביותר למעלה)
+        allTickets.sort((a, b) => new Date(b.createdAtStr) - new Date(a.createdAtStr));
+
+        res.json({ success: true, tickets: allTickets });
+
+    } catch (error) {
+        console.error("Admin API Error:", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
 
 const fs = require('fs');
 const path = require('path');
@@ -426,3 +541,5 @@ if (require.main === module) {
     });
 }
 module.exports = app;
+
+//❤️

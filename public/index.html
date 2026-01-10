@@ -62,9 +62,9 @@
         async function loadSystemProtected() {
             const token = localStorage.getItem('authToken');
             if (!token) return;
-
+        
             try {
-                // 1. טעינת ה-HTML
+                // 1. טעינת ה-HTML מהשרת (אנחנו לא יודעים איזה קובץ נקבל)
                 const htmlRes = await fetch('/api/resource/dashboard-html', {
                     method: 'GET',
                     headers: { 'Authorization': 'Bearer ' + token }
@@ -72,42 +72,49 @@
             
                 if (!htmlRes.ok) throw new Error("Auth failed");
                 const htmlContent = await htmlRes.text();
-
+                
+                // הזרקה
                 document.getElementById('system-container').innerHTML = htmlContent;
                 document.getElementById('login-screen').classList.add('hidden');
             
-                // 2. רשימת הקבצים שיש לך בתיקייה private/js
-                // (שים לב: הסדר לפעמים חשוב, וודא שספריות עזר נטענות קודם)
-                const scriptsToLoad = [
-                    'binui.js',
-                    'navbar.js',
-                    'logout.js',
-                    'ticket.js',
-                    'entry_permit.js',
-                    'startup_check.js',
-                    'show_screen.js'
-                ];
-            
-                // 3. טעינת כל הסקריפטים בלולאה
-                for (const scriptName of scriptsToLoad) {
-                    const jsRes = await fetch(`/api/resource/js/${scriptName}`, {
-                        method: 'GET',
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
+                // === 2. קריאת ה"מניפסט" מתוך ה-HTML שהוזרק ===
+                const manifestElement = document.getElementById('script-manifest');
                 
-                    if (jsRes.ok) {
-                        const jsCode = await jsRes.text();
-                        const script = document.createElement('script');
-                        script.textContent = jsCode;
-                        document.body.appendChild(script);
-                        console.log(`Loaded protected script: ${scriptName}`);
-                    } else {
-                        console.error(`Failed to load ${scriptName}`);
+                if (!manifestElement) {
+                    console.error("Critical: No script manifest found in protected HTML");
+                    return;
+                }
+            
+                // המרה לרשימה (מערך)
+                const scriptsToLoad = manifestElement.dataset.scripts.split(',');
+            
+                // === 3. טעינת הסקריפטים מהרשימה הדינמית ===
+                for (const scriptName of scriptsToLoad) {
+                    try {
+                        // מנקים רווחים אם יש
+                        const cleanName = scriptName.trim();
+                        
+                        const jsRes = await fetch(`/api/resource/js/${cleanName}`, {
+                            method: 'GET',
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                    
+                        if (jsRes.ok) {
+                            const jsCode = await jsRes.text();
+                            const script = document.createElement('script');
+                            script.textContent = jsCode;
+                            document.body.appendChild(script);
+                        } else {
+                            console.error(`Failed to load ${cleanName}`);
+                        }
+                    } catch (err) {
+                        console.error(`Error loading ${scriptName}`, err);
                     }
                 }
             
-                // 4. סיום הטעינה - הצגת התפריט
-                if (typeof showScreen === 'function') {
+                // 4. סיום - אם אנחנו במצב משתמש רגיל, מציגים את התפריט
+                // (בודקים אם קיים main-menu בדף שהוזרק)
+                if (document.getElementById('main-menu') && typeof showScreen === 'function') {
                     showScreen('main-menu');
                 }
             
@@ -117,7 +124,7 @@
                 localStorage.removeItem('userPhone');
                 location.reload();
             }
-        }
+        }        
         // === 2. בדיקת טעינה ===
         document.addEventListener('DOMContentLoaded', () => {
             const token = localStorage.getItem('authToken');

@@ -78,13 +78,14 @@ body {
 .icon-circle {
     width: 90px;
     height: 90px;
-    background-color: #f0f4f8;
+    background-color: #e7f7ff;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     margin-bottom: 10px;
     transition: transform 0.2s, background-color 0.2s;
+    box-shadow: 0 3px 10px rgb(180, 180, 180);
 }
 
 .menu-item:not(.disabled):active .icon-circle {
