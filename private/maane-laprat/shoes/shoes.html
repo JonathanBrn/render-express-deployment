@@ -1,0 +1,169 @@
+<style>
+    /* עיצוב כרטיסי הבחירה */
+    .shoe-selection-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .shoe-card {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .shoe-card:hover {
+        border-color: #cbd5e1;
+        background-color: #f8fafc;
+    }
+
+    /* המצב הנבחר */
+    .shoe-card.selected {
+        border-color: #3b82f6;
+        background-color: #eff6ff;
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.15);
+    }
+
+    /* אייקון ה-V בפינה */
+    .check-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: #3b82f6;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s;
+        font-size: 1.2rem;
+    }
+
+    .shoe-card.selected .check-icon {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* === עיצוב התמונות החדשות === */
+    .shoe-img {
+        width: 80px; /* גודל התמונה */
+        height: 80px;
+        object-fit: contain;
+        margin-bottom: 10px;
+        filter: grayscale(100%); /* שחור לבן כברירת מחדל */
+        opacity: 0.7;
+        transition: all 0.3s ease;
+    }
+
+    /* בצבע מלא כשבוחרים או עוברים עם העכבר */
+    .shoe-card:hover .shoe-img,
+    .shoe-card.selected .shoe-img {
+        filter: grayscale(0%);
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    .shoe-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #334155;
+        margin-top: 5px;
+    }
+
+    .shoe-desc {
+        font-size: 0.8rem;
+        color: #94a3b8;
+    }
+
+    /* אנימציית חשיפה */
+    .size-reveal {
+        display: none;
+        margin-top: 15px;
+        animation: fadeIn 0.4s ease forwards;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .size-reveal.visible {
+        display: block;
+    }
+</style>
+
+<p class="form-subtitle" style="color:#d97706; font-weight:500;">
+</p>
+
+<!-- שיוך מגדרי -->
+<div class="form-group">
+    <label>שיוך מגדרי</label>
+    <div class="select-wrapper">
+        <select id="ml_gender" required>
+            <option value="" disabled selected>בחר...</option>
+            <option value="men">גברים</option>
+            <option value="women">נשים</option>
+        </select>
+        <i class="fa-solid fa-chevron-down select-arrow"></i>
+    </div>
+</div>
+
+<div class="form-group" style="margin-top: 25px;">
+    <label style="margin-bottom: 15px; display: block; font-weight:bold;">בחר סוג נעליים:</label>
+    
+    <!-- גריד הבחירה -->
+    <div class="shoe-selection-grid">
+        
+        <!-- כרטיס 1: חי"ר -->
+        <div class="shoe-card" onclick="selectShoeType('combat')">
+            <i class="fa-solid fa-circle-check check-icon"></i>
+            
+            <!-- התמונה החדשה של נעל חי"ר -->
+            <img src="https://cdn-icons-png.flaticon.com/512/9025/9025735.png" class="shoe-img" alt="נעלי חי&quot;ר">
+            
+            <div class="shoe-title">נעלי חי"ר</div>
+        </div>
+
+        <!-- כרטיס 2: יח"ש -->
+        <div class="shoe-card" onclick="selectShoeType('office')">
+            <i class="fa-solid fa-circle-check check-icon"></i>
+            
+            <!-- התמונה החדשה של נעל יח"ש -->
+            <img src="https://cdn-icons-png.flaticon.com/512/10003/10003846.png" class="shoe-img" alt="נעלי יח&quot;ש">
+            
+            <div class="shoe-title">נעלי יח"ש</div>
+        </div>
+
+    </div>
+
+    <!-- אזור בחירת המידה -->
+    <div id="size-container" class="size-reveal">
+        <div class="form-group" style="background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd;">
+            <label id="size-label" style="color:#0369a1; font-weight:600;">בחר מידה:</label>
+            <div class="select-wrapper">
+                <select id="final_shoe_size" style="background: white;">
+                    <!-- יוזרק ב-JS -->
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="form-group" style="margin-top: 20px;">
+    <label>סיבת החלפה</label>
+    <div class="select-wrapper">
+        <select id="ml_reason">
+            <option value="" disabled selected>בחר סיבה...</option>
+            <option value="wear">בלאי / קרע</option>
+            <option value="size">שינוי מידה</option>
+            <option value="lost">אובדן (נדרש מת"ש)</option>
+            <option value="medical">פטור רפואי</option>
+        </select>
+        <i class="fa-solid fa-chevron-down select-arrow"></i>
+    </div>
+</div>

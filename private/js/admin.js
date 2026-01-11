@@ -1,10 +1,27 @@
-// === Admin Logic V2.0 ===
+// === Admin Logic V2.1 ===
 
 let adminTickets = [];
-let currentTicket = null;
+let currentEditingTicket = null;
 
-// === CONFIGURATION: The heart of the dynamic system ===
-// Add new types here in the future without changing logic!
+// === מילוני תרגום (הוספתי את זה כדי למנוע את השגיאה) ===
+const typeTranslation = {
+    'air_condition': 'מיזוג אוויר',
+    'electricity': 'חשמל',
+    'plumbing': 'אינסטלציה',
+    'furniture': 'ריהוט ונגרות',
+    'general': 'אחזקה כללית',
+    'computing': 'מחשוב'
+};
+
+const subTypeTranslation = {
+    'uniforms': 'החלפת מדים',
+    'shoes': 'החלפת נעליים',
+    'laundry': 'משלוח כביסה',
+    'office_supplies': 'ציוד משרדי',
+    'furniture': 'הזמנת ריהוט' // ריהוט במענה לפרט
+};
+
+// === קונפיגורציה ===
 const TYPE_CONFIG = {
     'entry_permit': { 
         label: 'אישור כניסה', 
@@ -12,11 +29,17 @@ const TYPE_CONFIG = {
         color: '#2563eb', // Blue
         class: 'type-entry'
     },
-    'maintenance': { // Fallback for specific maintenance types
+    'maintenance': { 
         label: 'אחזקה', 
         icon: 'fa-wrench', 
         color: '#d97706', // Orange
         class: 'type-maint'
+    },
+    'maane_laprat': { 
+        label: 'לוגיסטיקה', 
+        icon: 'fa-box-open', 
+        color: '#0d9488', // Teal
+        class: 'type-logistics' 
     },
     'computing': { 
         label: 'מחשוב', 
@@ -32,15 +55,14 @@ const TYPE_CONFIG = {
     }
 };
 
-// Map specific maintenance subtypes to the general maintenance config
 const MAINTENANCE_SUBTYPES = ['electricity', 'plumbing', 'air_condition', 'furniture', 'general'];
 
-// Initialize
+// הרצה ראשונית
 (function init() {
     fetchAdminData();
 })();
 
-// === 1. Fetch Data ===
+// === 1. שליפת נתונים ===
 async function fetchAdminData() {
     const token = localStorage.getItem('authToken');
     const container = document.getElementById('admin-container');
@@ -54,51 +76,44 @@ async function fetchAdminData() {
         if (json.success) {
             adminTickets = json.tickets;
             updateStats();
-            filterAdminTickets(); // Initial render
+            filterAdminTickets(); // רינדור ראשוני
         } else {
             alert('Session Expired');
             location.reload();
         }
     } catch (e) {
         console.error(e);
-        container.innerHTML = `<div style="grid-column:1/-1; text-align:center; color:red">
-            <i class="fa-solid fa-triangle-exclamation"></i> תקלת תקשורת
-        </div>`;
+        if(container) container.innerHTML = `<div style="text-align:center; color:red">תקלת תקשורת</div>`;
     }
 }
 
-// === 2. Stats Calculation ===
+// === 2. סטטיסטיקות ===
 function updateStats() {
     const total = adminTickets.length;
     const open = adminTickets.filter(t => t.status === 'open').length;
-    const progress = adminTickets.filter(t => t.status === 'in_progress').length;
     const closed = adminTickets.filter(t => t.status === 'closed').length;
 
-    // Element IDs must match HTML
     if(document.getElementById('st-total')) {
         document.getElementById('st-total').innerText = total;
         document.getElementById('st-open').innerText = open;
         document.getElementById('st-closed').innerText = closed; 
-        // Optional: Add progress stat to HTML if you want
     }
 }
 
-// === 3. Filtering ===
+// === 3. סינון ===
 function filterAdminTickets() {
     const search = document.getElementById('adm-search').value.toLowerCase();
     const typeFilter = document.getElementById('filter-type').value;
     const statusFilter = document.getElementById('filter-status').value;
 
     const filtered = adminTickets.filter(t => {
-        // Search (Deep search in object string)
         const textMatch = JSON.stringify(t).toLowerCase().includes(search);
         
-        // Type Filter logic
         let typeMatch = true;
         if (typeFilter === 'entry_permit') typeMatch = (t.type === 'entry_permit');
-        if (typeFilter === 'maintenance') typeMatch = (t.type !== 'entry_permit'); // Catch all maintenance
+        if (typeFilter === 'maintenance') typeMatch = (MAINTENANCE_SUBTYPES.includes(t.type));
+        // אפשר להוסיף כאן סינון גם למענה לפרט אם תרצה בעתיד
 
-        // Status Filter
         const statusMatch = statusFilter === 'all' || t.status === statusFilter;
 
         return textMatch && typeMatch && statusMatch;
@@ -107,8 +122,7 @@ function filterAdminTickets() {
     renderGrid(filtered);
 }
 
-// === 4. Rendering Cards (Updated) ===
-
+// === 4. רינדור כרטיסים (Render) ===
 function renderGrid(tickets) {
     const container = document.getElementById('admin-container');
     container.innerHTML = '';
@@ -120,61 +134,57 @@ function renderGrid(tickets) {
         return;
     }
 
-    // מילון תרגום לסוגי תקלות (שלא יופיע באנגלית)
-    const typeNames = {
-        'electricity': 'חשמל',
-        'plumbing': 'אינסטלציה',
-        'air_condition': 'מיזוג אוויר',
-        'furniture': 'ריהוט',
-        'general': 'כללי',
-        'computing': 'מחשוב',
-        'entry_permit': 'אישור כניסה'
-    };
-
     tickets.forEach(t => {
-        // --- הגדרות עיצוב ---
+        // קביעת הקונפיגורציה
         let config = TYPE_CONFIG[t.type] || TYPE_CONFIG['default'];
+        
         if (MAINTENANCE_SUBTYPES.includes(t.type)) {
             config = TYPE_CONFIG['maintenance'];
         }
 
-        // --- נרמול נתונים ---
-        const userName = t.contactName || t.visitorName || 'ללא שם';
+        // --- נרמול נתונים (ותיקון התרגום) ---
+        const userName = t.contactName || t.visitorName || t.fullname || 'ללא שם';
         const userPhone = t.phone || t.requestorPhone || t.visitorPhone;
+        
+        // תיאור: לפעמים זה description, לפעמים purpose, לפעמים notes
         const mainDesc = t.description || t.purpose || t.notes || 'אין פירוט';
         
-        // תרגום הסוג לעברית (אם אין תרגום, מציג את המקור)
-        const displayType = typeNames[t.type] || t.type;
+        // כותרת הכרטיס (החלק שגרם לשגיאה תוקן כאן)
+        let displayType = t.type;
+        if (t.type === 'entry_permit') {
+            displayType = 'אישור כניסה';
+        } else if (t.type === 'maane_laprat') {
+            displayType = subTypeTranslation[t.subType] || t.subType; // שימוש במילון
+        } else {
+            displayType = typeTranslation[t.type] || t.type; // שימוש במילון
+        }
         
-        // --- עיצוב סטטוס ---
+        // --- סטטוס ---
         const statusMeta = {
-            'open': { text: 'פתוח', bg: '#51ffcb', color: '#23452e' },
-            'in_progress': { text: 'בטיפול', bg: '#ffd500', color: '#000000' },
-            'closed': { text: 'סגור', bg: '#0040ff', color: '#000000' }
+            'open': { text: 'פתוח', bg: '#fee2e2', color: '#991b1b' },
+            'in_progress': { text: 'בטיפול', bg: '#ffedd5', color: '#9a3412' },
+            'closed': { text: 'סגור', bg: '#dcfce7', color: '#166534' }
         };
         const s = statusMeta[t.status] || { text: t.status, bg: '#eee', color: '#333' };
 
-        // --- בניית הכרטיס ---
+        // --- יצירת ה-HTML ---
         const card = document.createElement('div');
-        card.className = 't-card';
+        card.className = 't-card'; // הסרתי את ה-classes הישנים, t-card ב-CSS החדש מספיק
         card.onclick = () => openModal(t);
 
-        // שינוי קריטי כאן ב-t-header:
-        // 1. קודם שמים את המספר (t-id) -> כדי שיהיה בימין
-        // 2. אחר כך שמים את הסטטוס (badge) -> כדי שיהיה בשמאל
+        // הפס הצבעוני והתוכן
         card.innerHTML = `
             <div class="t-strip" style="background-color: ${config.color};"></div>
             
             <div class="t-body">
                 <div class="t-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <!-- אלמנט ראשון: הולך לימין -->
-                    <span class="t-id" style="font-weight:bold; color:#cbd5e1;">#${t.ticketNumber}</span>
-
-                    <!-- אלמנט שני: הולך לשמאל -->
+                    <!-- מספר טיקט בימין -->
+                    <span class="t-id">#${t.id}</span>
+                    <!-- סטטוס בשמאל -->
                     <span class="badge" style="background:${s.bg}; color:${s.color}">${s.text}</span>
                 </div>
 
-                <div class="t-title" style="color: ${config.color}; margin-top: 10px;">
+                <div class="t-title" style="color: ${config.color}">
                     <i class="fa-solid ${config.icon}"></i> ${displayType}
                 </div>
 
@@ -197,26 +207,27 @@ function renderGrid(tickets) {
     });
 }
 
-// === 5. Modal Logic (Dynamic Fields) ===
+// === 5. לוגיקת המודאל (פרטים מלאים) ===
 function openModal(t) {
     currentEditingTicket = t;
     const modal = document.getElementById('admin-modal');
     
-    // Basic Header Info
-    document.getElementById('mdl-header-id').innerText = `#${t.ticketNumber} | ${t.type}`;
+    // 1. כותרת: ID מלא (טלפון-מספר)
+    document.getElementById('mdl-header-id').innerText = `#${t.id}`;
+    
+    // 2. סטטוס והערות
     document.getElementById('mdl-status').value = t.status;
     document.getElementById('mdl-notes').value = t.adminNotes || '';
 
-    // Description
-    document.getElementById('mdl-desc-text').innerText = t.description || t.purpose || 'ללא תיאור';
+    // 3. תיאור ראשי
+    document.getElementById('mdl-desc-text').innerText = t.description || t.purpose || t.notes || 'ללא תיאור';
 
-    // === Dynamic Grid Builder ===
-    // We build the grid based on what data is actually available!
+    // === 4. בניית גריד הפרטים (החלק החדש) ===
     const grid = document.getElementById('mdl-dynamic-info');
     grid.innerHTML = '';
 
     const addField = (label, value) => {
-        if (!value) return; // Don't show empty fields
+        if (!value || value === 'undefined') return;
         grid.innerHTML += `
             <div class="info-item">
                 <span class="info-label">${label}</span>
@@ -225,34 +236,67 @@ function openModal(t) {
         `;
     };
 
-    // 1. User Info (Always show)
-    const name = t.contactName || t.visitorName;
-    const phone = t.phone || t.requestorPhone;
-    
-    addField('שם המבקש/מבקר', name);
-    // Phone needs a link
+    // --- מידע אישי (תמיד קיים) ---
+    const name = t.fullname || t.contactName || t.visitorName;
+    const phone = t.phone || t.requestorPhone; // הטלפון שביצע את הפנייה
+    const personalId = t.personalId || t.visitorId; // ת.ז / מ.א
+
+    addField('שם', name);
+    if(personalId) addField('מספר אישי / ת.ז', personalId);
+
+    // טלפון לחיץ
     grid.innerHTML += `
         <div class="info-item">
             <span class="info-label">טלפון</span>
-            <a href="tel:${phone}" class="info-value" style="color:var(--primary); text-decoration:none;">${phone}</a>
+            <a href="tel:${phone}" class="info-value" style="color:var(--primary); text-decoration:none; direction:ltr;">${phone}</a>
         </div>
     `;
 
-    // 2. Specifics based on Type
+    // --- לוגיקה לפי סוג פנייה ---
+    
     if (t.type === 'entry_permit') {
-        addField('ת.ז / מ.א', t.visitorId);
-        addField('רכב', `${t.carNum || '-'} ${t.carColor ? '('+t.carColor+')' : ''}`);
+        // אישור כניסה
+        addField('רכב', `${t.carNum || ''} ${t.carColor || ''}`);
         addField('תאריכים', `${t.dateStart} -> ${t.dateEnd}`);
         addField('סיווג', t.securityLevel);
-    } else {
-        // Maintenance
+    } 
+    else if (t.type === 'maane_laprat') {
+        // === מענה לפרט (התוספת שביקשת) ===
+        
+        // תרגום הסוג (מדים/נעליים/כביסה)
+        const subTypes = {
+            'uniforms': 'מדים', 'shoes': 'נעליים', 'laundry': 'כביסה',
+            'furniture': 'ריהוט', 'office_supplies': 'ציוד משרדי'
+        };
+        addField('סוג בקשה', subTypes[t.subType] || t.subType);
+
+        if(t.subType === 'uniforms') {
+            addField('מגדר', t.gender);
+            if(t.shirt !== 'לא הוזמן') addField('חולצה', t.shirt);
+            if(t.pants !== 'לא הוזמן') addField('מכנס', t.pants);
+            if(t.softshell !== 'לא הוזמן') addField('סופטשל', t.softshell);
+            addField('סיבה', t.reason);
+        } 
+        else if (t.subType === 'shoes') {
+            addField('מגדר', t.gender);
+            if(t.shoe_combat !== 'לא הוזמן') addField('נעלי חי"ר', t.shoe_combat);
+            if(t.shoe_office !== 'לא הוזמן') addField('נעלי יח"ש', t.shoe_office);
+            addField('סיבה', t.reason);
+        } 
+        else if (t.subType === 'laundry') {
+            // הנה המידע מהתמונה שלך
+            addField('סוג מדים', t.uniform_type); 
+            // addField('זכאות', t.service_included); // אם שמרת את זה
+            if(t.laundry_notes) addField('הערות כביסה', t.laundry_notes);
+        }
+    }
+    else {
+        // תקלות בינוי
         addField('מיקום', t.location);
-        addField('נכס / מזגן', t.assetNumber);
-        addField('מנהל/אחראי', t.manager);
-        // Note: Description is shown in the main text block
+        addField('נכס', t.assetNumber);
+        addField('אחראי', t.manager);
     }
 
-    // Show modal
     modal.classList.remove('hidden');
 }
 
@@ -260,7 +304,7 @@ function closeAdminModal() {
     document.getElementById('admin-modal').classList.add('hidden');
 }
 
-// === 6. Saving ===
+// === 6. שמירה לשרת ===
 async function saveAdminChanges() {
     if (!currentEditingTicket) return;
 
@@ -291,10 +335,7 @@ async function saveAdminChanges() {
         const res = await response.json();
         if (res.success) {
             closeAdminModal();
-            fetchAdminData(); // Refresh list to see changes
-            
-            // Subtle success notification (optional, simple alert for now)
-            // You could use a toast library here for better UX
+            fetchAdminData(); 
         } else {
             alert('שגיאה: ' + res.message);
         }

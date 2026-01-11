@@ -10,6 +10,15 @@ const typeTranslation = {
     'general': 'אחזקה כללית'
 };
 
+// מילון תרגום למענה לפרט
+const subTypeTranslation = {
+    'uniforms': 'החלפת מדים',
+    'shoes': 'החלפת נעליים',
+    'laundry': 'משלוח כביסה',
+    'office_supplies': 'ציוד משרדי',
+    'furniture': 'הזמנת ריהוט'
+};
+
 const statusTranslation = {
     'open': 'פתוח',
     'closed': 'טופל',
@@ -32,12 +41,10 @@ async function loadMyTickets() {
     }
 
     try {
-        // שליחה לשרת עם ה-Header של האבטחה
-        // שים לב: אין צורך לשלוח ?phone=... השרת יודע לבד!
         const response = await fetch('/api/maintenance/my-tickets', {
             method: 'GET',
             headers: {
-                'Authorization': 'Bearer ' + token, // שליחת הטוקן
+                'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             }
         });
@@ -45,24 +52,27 @@ async function loadMyTickets() {
         const result = await response.json();
 
         if (result.success) {
+            myTicketsData = result.tickets; // שמירה בזיכרון אם נצטרך
             renderTickets(result.tickets);
         } else {
-            // אם הטוקן פג תוקף - לזרוק להתחברות
             if (response.status === 403 || response.status === 401) {
                 alert("פג תוקף ההתחברות, נא להתחבר מחדש");
-                logoutUser();
+                if(typeof logoutUser === 'function') logoutUser();
             } else {
                 container.innerHTML = `<p>${result.message}</p>`;
             }
         }
     } catch (error) {
         console.error(error);
+        container.innerHTML = '<p style="text-align:center; color:red">תקלת תקשורת</p>';
     }
 }
 
 // 2. פונקציה לציור הכרטיסיות (Render)
 function renderTickets(tickets) {
     const container = document.getElementById('tickets-container');
+
+
     container.innerHTML = '';
 
     if (tickets.length === 0) {
@@ -70,10 +80,12 @@ function renderTickets(tickets) {
         return;
     }
 
-    // רשימת סוגים ששייכים ל"בינוי ואחזקה"
     const maintenanceTypes = ['air_condition', 'electricity', 'plumbing', 'furniture', 'general'];
 
     tickets.forEach((ticket) => {
+
+
+
         // המרת תאריך
         let dateStr = '---';
         if (ticket.createdAtStr) {
@@ -83,37 +95,45 @@ function renderTickets(tickets) {
 
         const statusText = statusTranslation[ticket.status] || ticket.status;
 
-        // === לוגיקת צבעים (החלק החדש) ===
-        let colorClass = 'type-default'; // ברירת מחדל
-        let cardTitle = '';
+        // === לוגיקת צבעים וכותרות ===
+        let colorClass = 'type-default'; 
+        let cardTitle = ticket.type;
         let extraInfoHtml = '';
 
         if (ticket.type === 'entry_permit') {
-            // אישור כניסה -> כחול
+            // === אישורי כניסה (כחול) ===
             colorClass = 'type-entry-permit';
             cardTitle = 'אישור כניסה';
             extraInfoHtml = `<span style="font-weight:600; color:#334155; margin-right: auto;"><i class="fa-regular fa-user"></i> ${ticket.visitorName || 'אורח'}</span>`;
         
+        } else if (ticket.type === 'maane_laprat') {
+            // === מענה לפרט (טורקיז/ירוק) ===
+            // מומלץ להוסיף ב-CSS את .type-logistics { border-right-color: ... }
+            colorClass = 'type-maane-laprat'; 
+            cardTitle = subTypeTranslation[ticket.subType] || ticket.subType;
+            // אפשר להציג פרט רלוונטי
+            let info = ticket.subType === 'laundry' ? (ticket.uniform_type || '') : (ticket.reason || '');
+            if(info) extraInfoHtml = `<span style="font-size:0.85em; color:#64748b; margin-right:auto;">${info}</span>`;
+
         } else if (maintenanceTypes.includes(ticket.type)) {
-            // בינוי ואחזקה (כל הסוגים) -> חום
+            // === בינוי ואחזקה (חום) ===
             colorClass = 'type-maintenance';
             cardTitle = typeTranslation[ticket.type] || ticket.type;
         
         } else if (ticket.type === 'computing') {
-            // מחשוב -> סגול
+            // === מחשוב (סגול) ===
             colorClass = 'type-computing';
             cardTitle = 'תקלת מחשוב';
         }
 
         // יצירת הכרטיס
         const card = document.createElement('div');
-        // הוספנו את colorClass לרשימת הקלאסים
         card.className = `ticket-card ${colorClass}`;
         
         card.innerHTML = `
-            <div class="status-badge">${statusText}</div> <!-- הסטטוס נשאר למעלה -->
+            <div class="status-badge">${statusText}</div>
             <h3 class="ticket-title">${cardTitle}</h3>
-            <div class="ticket-id">#${ticket.id || '---'}</div>
+            <div class="ticket-id">#${ticket.id || ticket.id}</div>
             
             <div class="ticket-footer" style="display: flex; align-items: center; justify-content: space-between;">
                 <span class="timestamp">${dateStr}</span>
@@ -130,137 +150,126 @@ function renderTickets(tickets) {
 function openTicketModal(ticket) {
     const modal = document.getElementById('ticket-modal');
     
-    // === 1. כותרת עליונה קבועה (סטטוס + מזהה) ===
+    // כותרת עליונה קבועה
     const statusText = statusTranslation[ticket.status] || ticket.status;
     document.getElementById('modal-status').innerText = statusText;
-    document.getElementById('modal-id').innerText = ticket.id || '-';
-    console.log("Ticket ID is -", ticket.id)
+    document.getElementById('modal-id').innerText = ticket.id;
 
-    // טיפול בתאריך יצירה
+    // תאריך יצירה
     let dateDisplay = '---';
     if (ticket.createdAtStr) {
         const d = new Date(ticket.createdAtStr);
         dateDisplay = d.toLocaleString('he-IL');
-    } else if (ticket.createdAt && ticket.createdAt.toDate) {
-         dateDisplay = ticket.createdAt.toDate().toLocaleString('he-IL');
     }
     document.getElementById('modal-date').innerText = 'נפתח בתאריך: ' + dateDisplay;
 
-    // === 2. בניית התוכן המשתנה (לפי סוג) ===
+    // === בניית התוכן המשתנה ===
     const contentDiv = document.getElementById('modal-dynamic-content');
     let htmlContent = '';
 
-    console.log(ticket)
     if (ticket.type === 'entry_permit') {
-        // =================================================
-        //                 תצוגת אישור כניסה
-        // =================================================
+        // === אישור כניסה ===
         document.getElementById('modal-title').innerText = 'אישור כניסה';
-
         htmlContent = `
-            <!-- פרטי המבקר -->
             <div class="detail-group">
-                <div class="detail-row">
-                    <span class="detail-label"><i class="fa-regular fa-user"></i> שם המבקר:</span>
-                    <span class="detail-value">${ticket.visitorName || '-'}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label"><i class="fa-solid fa-id-card"></i> ת.ז / מ.א:</span>
-                    <span class="detail-value">${ticket.visitorId || '-'}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label"><i class="fa-solid fa-phone"></i> טלפון מבקר:</span>
-                    <span class="detail-value">${ticket.visitorPhone || '-'}</span>
-                </div>
+                <div class="detail-row"><span class="detail-label">שם המבקר:</span> <span class="detail-value">${ticket.visitorName || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">ת.ז:</span> <span class="detail-value">${ticket.visitorId || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">טלפון:</span> <span class="detail-value">${ticket.visitorPhone || '-'}</span></div>
             </div>
-            
-            <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 10px 0;">
-
-            <!-- פרטי רכב ותאריכים -->
+            <hr style="margin:10px 0; border-top:1px dashed #e2e8f0;">
             <div class="detail-group">
-                <div class="detail-row">
-                    <span class="detail-label"><i class="fa-solid fa-car"></i> רכב:</span>
-                    <span class="detail-value">${ticket.carNum || 'ללא'} ${ticket.carColor ? `(${ticket.carColor})` : ''}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label"><i class="fa-solid fa-calendar-days"></i> תאריכים:</span>
-                    <span class="detail-value" style="direction: ltr; text-align: right;">
-                        ${ticket.dateStart || '?'} <i class="fa-solid fa-arrow-left" style="font-size:0.7em;"></i> ${ticket.dateEnd || '?'}
-                    </span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label"><i class="fa-solid fa-shield-halved"></i> סיווג:</span>
-                    <span class="detail-value">רמה ${ticket.securityLevel || 'ללא'}</span>
-                </div>
+                <div class="detail-row"><span class="detail-label">רכב:</span> <span class="detail-value">${ticket.carNum || '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">תאריכים:</span> <span class="detail-value">${ticket.dateStart} -> ${ticket.dateEnd}</span></div>
             </div>
-
-            <!-- מטרת הביקור -->
-            <div class="detail-row full-width" style="margin-top: 10px;">
-                <span class="detail-label">מטרת הביקור:</span>
+            <div class="detail-row full-width" style="margin-top:10px;">
+                <span class="detail-label">מטרה:</span>
                 <p class="detail-text">${ticket.purpose || '-'}</p>
             </div>
         `;
 
-    } else {
-        // =================================================
-        //                 תצוגת תקלות בינוי
-        // =================================================
+    } else if (ticket.type === 'maane_laprat') {
+        // === מענה לפרט ===
+        const title = subTypeTranslation[ticket.subType] || ticket.subType;
+        document.getElementById('modal-title').innerText = title;
+
+        let dynamicRows = '';
         
+        // מדים
+        if (ticket.subType === 'uniforms') {
+            dynamicRows = `
+                <div class="detail-row"><span class="detail-label">מגדר:</span> <span class="detail-value">${ticket.gender}</span></div>
+                <div class="detail-row"><span class="detail-label">חולצה:</span> <span class="detail-value">${ticket.shirt}</span></div>
+                <div class="detail-row"><span class="detail-label">מכנס:</span> <span class="detail-value">${ticket.pants}</span></div>
+                <div class="detail-row"><span class="detail-label">סופטשל:</span> <span class="detail-value">${ticket.softshell}</span></div>
+            `;
+        } 
+        // נעליים
+        else if (ticket.subType === 'shoes') {
+            dynamicRows = `
+                <div class="detail-row"><span class="detail-label">מגדר:</span> <span class="detail-value">${ticket.gender}</span></div>
+                ${ticket.shoe_combat !== 'לא הוזמן' ? `<div class="detail-row"><span class="detail-label">נעלי חי"ר:</span> <span class="detail-value">${ticket.shoe_combat}</span></div>` : ''}
+                ${ticket.shoe_office !== 'לא הוזמן' ? `<div class="detail-row"><span class="detail-label">נעלי יח"ש:</span> <span class="detail-value">${ticket.shoe_office}</span></div>` : ''}
+            `;
+        }
+        // כביסה
+        else if (ticket.subType === 'laundry') {
+            dynamicRows = `
+                <div class="detail-row"><span class="detail-label">סוג מדים:</span> <span class="detail-value">${ticket.uniform_type}</span></div>
+                <!-- שדה הערות מיוחד לכביסה -->
+                ${ticket.laundry_notes ? `<div class="detail-row full-width"><span class="detail-label">הערות כביסה:</span><p class="detail-text">${ticket.laundry_notes}</p></div>` : ''}
+            `;
+        }
+
+        htmlContent = `
+            <div class="detail-group" style="margin-bottom:15px;">
+                <div class="detail-row" style="background:#f0f9ff; padding:8px; border-radius:6px; margin-bottom:5px;">
+                    <span class="detail-label">עבור:</span> 
+                    <span class="detail-value" style="font-weight:bold;">${ticket.fullname || 'לא צוין'}</span>
+                </div>
+                <div class="detail-row" style="background:#f0f9ff; padding:8px; border-radius:6px;">
+                    <span class="detail-label">מספר אישי:</span> 
+                    <span class="detail-value">${ticket.personalId || 'לא צוין'}</span>
+                </div>
+            </div>
+
+            <div class="detail-group">
+                ${dynamicRows}
+            </div>
+            
+            <hr style="margin:10px 0; border-top:1px dashed #e2e8f0;">
+            
+            <div class="detail-row full-width">
+                <span class="detail-label">הערות כלליות/סיבה:</span>
+                <p class="detail-text">${ticket.reason || ticket.notes || 'אין הערות'}</p>
+            </div>
+        `;
+
+    } else {
+        // === תקלות בינוי (ברירת מחדל) ===
         const typeText = typeTranslation[ticket.type] || ticket.type;
         document.getElementById('modal-title').innerText = 'פרטי קריאת שירות';
 
         htmlContent = `
-            <div class="detail-row">
-                <span class="detail-label">סוג תקלה:</span>
-                <span class="detail-value">${typeText}</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">מיקום:</span>
-                <span class="detail-value">${ticket.location || '-'}</span>
-            </div>
-
-            <!-- שדות נוספים שראיתי בצילום מסך שלך -->
-            ${ticket.assetNumber ? `
-            <div class="detail-row">
-                <span class="detail-label">מס' נכס/מזגן:</span>
-                <span class="detail-value">${ticket.assetNumber}</span>
-            </div>` : ''}
-
-            ${ticket.manager ? `
-            <div class="detail-row">
-                <span class="detail-label">אחראי ענפי:</span>
-                <span class="detail-value">${ticket.manager}</span>
-            </div>` : ''}
-
-            <div class="detail-row">
-                <span class="detail-label">איש קשר:</span>
-                <span class="detail-value">${ticket.contactName || ticket.phone}</span>
-            </div>
-
-            <hr style="border: 0; border-top: 1px dashed #e2e8f0; margin: 10px 0;">
-
-            <div class="detail-row full-width">
-                <span class="detail-label">תיאור התקלה:</span>
-                <p class="detail-text">${ticket.description || '-'}</p>
-            </div>
+            <div class="detail-row"><span class="detail-label">סוג תקלה:</span> <span class="detail-value">${typeText}</span></div>
+            <div class="detail-row"><span class="detail-label">מיקום:</span> <span class="detail-value">${ticket.location || '-'}</span></div>
             
-            <div class="detail-row full-width">
-                <span class="detail-label">הערות נוספות:</span>
-                <p class="detail-text" style="${ticket.notes ? 'color:#d9534f' : ''}">${ticket.notes || 'אין הערות'}</p>
-            </div>
+            ${ticket.assetNumber ? `<div class="detail-row"><span class="detail-label">נכס:</span> <span class="detail-value">${ticket.assetNumber}</span></div>` : ''}
+            ${ticket.manager ? `<div class="detail-row"><span class="detail-label">אחראי:</span> <span class="detail-value">${ticket.manager}</span></div>` : ''}
+            
+            <div class="detail-row"><span class="detail-label">איש קשר:</span> <span class="detail-value">${ticket.contactName || ticket.phone}</span></div>
+
+            <hr style="margin:10px 0; border-top:1px dashed #e2e8f0;">
+            <div class="detail-row full-width"><span class="detail-label">תיאור:</span><p class="detail-text">${ticket.description || '-'}</p></div>
+            <div class="detail-row full-width"><span class="detail-label">הערות:</span><p class="detail-text" style="${ticket.notes ? 'color:#d9534f' : ''}">${ticket.notes || 'אין הערות'}</p></div>
         `;
     }
 
-    // הזרקת התוכן למודאל
     contentDiv.innerHTML = htmlContent;
-
-    // הצגת המודאל
     modal.classList.remove('hidden');
 }
 
 // 4. סגירת המודאל
 function closeTicketModal(e, force = false) {
-    // סגירה רק אם לחצו על הרקע הכהה או על ה-X
     if (force || e.target.id === 'ticket-modal') {
         document.getElementById('ticket-modal').classList.add('hidden');
     }

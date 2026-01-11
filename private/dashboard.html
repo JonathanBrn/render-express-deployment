@@ -36,7 +36,7 @@
 </header>
 
 <main class="container">
-    <!-- === מסך 1: תפריט ראשי === -->
+<!-- === מסך 1: תפריט ראשי === -->
     <div id="main-menu" class="screen hidden">
         <h1 class="page-title">בחרו את תחום הבקשה שלכם</h1>
         <div class="grid-menu">
@@ -46,18 +46,26 @@
                 </div>
                 <span class="label">אישורי כניסה</span>
             </div>
-            <div class="menu-item" onclick="alert('טרם פותח')">
-                <div class="icon-circle"><img src="https://cdn-icons-png.flaticon.com/512/679/679720.png" class="img-icon"></div>
-                <span class="label">ציוד ואספקה</span>
+            <!-- עודכן: מפנה לתפריט המשני -->
+            <div class="menu-item" onclick="showScreen('maane-laprat-menu')">
+                <div class="icon-circle">
+                    <img src="https://cdn-icons-png.flaticon.com/512/1441/1441180.png" alt="מענה לפרט" class="img-icon">
+                </div>
+                <span class="label">מענה לפרט</span>
             </div>
+            
             <div class="menu-item" onclick="showScreen('maintenance-screen')">
                 <div class="icon-circle"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077198.png" class="img-icon"></div>
                 <span class="label">בינוי ואחזקה</span>
             </div>
-            <div class="menu-item" onclick="alert('טרם פותח')">
-                <div class="icon-circle"><img src="https://cdn-icons-png.flaticon.com/512/3067/3067451.png" class="img-icon"></div>
+
+            <div class="menu-item disabled">
+                <div class="badge">בקרוב!</div>
+                <div class="icon-circle grayscale">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3067/3067451.png" class="img-icon"></div>
                 <span class="label">מחשוב</span>
             </div>
+
             <div class="menu-item disabled">
                 <div class="badge">בקרוב!</div>
                 <div class="icon-circle grayscale">
@@ -65,13 +73,7 @@
                 </div>
                 <span class="label">חניות</span>
             </div>
-             <div class="menu-item disabled">
-                <div class="badge">בקרוב!</div>
-                <div class="icon-circle grayscale">
-                    <img src="https://cdn-icons-png.flaticon.com/512/1441/1441180.png" alt="רכבים" class="img-icon">
-                </div>
-                <span class="label">מענה לפרט</span>
-            </div>
+
             <div class="menu-item disabled">
                 <div class="badge">בקרוב!</div>
                 <div class="icon-circle grayscale">
@@ -79,6 +81,7 @@
                 </div>
                 <span class="label">אירועים</span>
             </div>
+
             <div class="menu-item disabled">
                 <div class="badge">בקרוב!</div>
                 <div class="icon-circle grayscale">
@@ -89,13 +92,85 @@
         </div>
     </div>
 
+    <!-- === מסך חדש: תפריט מענה לפרט === -->
+    <div id="maane-laprat-menu" class="screen hidden">
+        <div class="back-btn" onclick="showScreen('main-menu')">
+            <i class="fa-solid fa-arrow-right"></i> חזרה לתפריט ראשי
+        </div>
+        <h2 class="form-title">מענה לפרט ולוגיסטיקה</h2>
+        <p class="form-subtitle">אנא בחרו את סוג השירות המבוקש</p>
+        
+        <div class="grid-menu">
+            <div class="menu-item" onclick="openMaaneForm('uniforms')">
+                <div class="icon-circle"><i class="fa-solid fa-shirt fa-2x" style="color:#4a90e2"></i></div>
+                <span class="label">החלפת מדים</span>
+            </div>
+            <div class="menu-item" onclick="openMaaneForm('shoes')">
+                <div class="icon-circle"><i class="fa-solid fa-shoe-prints fa-2x" style="color:#4a90e2"></i></div>
+                <span class="label">החלפת נעליים</span>
+            </div>
+            <div class="menu-item" onclick="openMaaneForm('laundry')">
+                <div class="icon-circle"><i class="fa-solid fa-soap fa-2x" style="color:#4a90e2"></i></div>
+                <span class="label">משלוח כביסה</span>
+            </div>
+            <div class="menu-item" onclick="openMaaneForm('office_supplies')">
+                <div class="icon-circle"><i class="fa-solid fa-stapler fa-2x" style="color:#4a90e2"></i></div>
+                <span class="label">ציוד משרדי</span>
+            </div>
+            <div class="menu-item" onclick="openMaaneForm('furniture')">
+                <div class="icon-circle"><i class="fa-solid fa-couch fa-2x" style="color:#4a90e2"></i></div>
+                <span class="label">הזמנת ריהוט</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- === מסך חדש: טופס מענה לפרט (דינמי) === -->
+    <div id="maane-laprat-form" class="screen hidden">
+        <div class="back-btn" onclick="showScreen('maane-laprat-menu')">
+            <i class="fa-solid fa-arrow-right"></i> חזרה לבחירה
+        </div>
+        
+        <!-- הכותרת תשתנה דינמית -->
+        <h2 class="form-title" id="ml-form-title">טופס בקשה</h2>
+        <p class="form-subtitle" id="ml-form-subtitle">מלאו את הפרטים לבקשה</p>        
+        <form class="modern-form" onsubmit="submitMaaneForm(event)">
+            <!-- שדות קבועים לכולם -->
+            <div class="grid-2-cols">
+                <div class="form-group">
+                    <label>שם מלא</label>
+                    <input id="ml_fullname" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label>מספר אישי</label>
+                    <input id="ml_id_num" type="tel" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>טלפון נייד</label>
+                <input id="ml_phone" type="tel" class="locked-input" readonly>
+            </div>
+
+            <!-- אזור לשדות דינמיים שמשתנים לפי הבחירה -->
+            <div id="ml-dynamic-fields"></div>
+
+            <div class="form-group">
+                <label>הערות נוספות</label>
+                <textarea id="ml_notes" rows="2"></textarea>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                שלח בקשה <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+
     <!-- === מסך 2: טופס תחזוקה === -->
     <div id="maintenance-screen" class="screen hidden">
         <div class="back-btn" onclick="showScreen('main-menu')">
             <i class="fa-solid fa-arrow-right"></i> חזרה לתפריט
         </div>
         <h2 class="form-title">דיווח תקלת בינוי</h2>
-        <p class="form-subtitle">אנא מלאו את פרטי התקלה במדויק</p>
+        <p id="ml-form-subtitle" class="form-subtitle">אנא מלאו את פרטי התקלה במדויק</p>
         
         <form class="modern-form" onsubmit="submitMaintenanceForm(event)">
             <div class="form-group">
@@ -237,7 +312,7 @@
         </form>
     </div>
 
-    <!-- === מסך 4: הפניות שלי === -->
+    <!-- === מסך אחרון: הפניות שלי === -->
     <div id="my-tickets-screen" class="screen hidden">
         <div class="back-btn" onclick="showScreen('main-menu')">
             <i class="fa-solid fa-arrow-right"></i> חזרה לתפריט
@@ -277,7 +352,7 @@
 
 <!-- רשימת הסקריפטים למשתמש רגיל -->
 <div id="script-manifest" 
-     data-scripts="binui.js,navbar.js,logout.js,ticket.js,entry_permit.js,startup_check.js, show_screen.js" 
+     data-scripts="binui.js,navbar.js,logout.js,ticket.js,entry_permit.js,startup_check.js, show_screen.js, maane_laprat.js" 
      style="display:none;">
 </div>
 

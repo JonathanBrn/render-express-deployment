@@ -634,3 +634,13 @@ input:focus, textarea:focus, select:focus {
 .type-default::before {
     background-color: #94a3b8 !important;
 }
+
+/* === צבע למענה לפרט (לוגיסטיקה) === */
+.type-maane-laprat::before {
+    background-color: #0d9488 !important; /* טורקיז כהה */
+}
+
+/* אופציונלי: צבע כותרת תואם */
+.type-maane-laprat .ticket-title {
+    color: #0f766e;
+}

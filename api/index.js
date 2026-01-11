@@ -1,8 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
 const admin = require('firebase-admin');
+const jwt = require('jsonwebtoken');
+const express = require('express');
 const helmet = require('helmet');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
+
 require('dotenv').config();
 
 // --- בדיקת משתנים ---
@@ -173,6 +176,18 @@ async function sendSMSOtp(phoneNumber, code) {
     }
 }
 
+// === Middleware: בדיקת הרשאות מנהל ===
+function requireAdmin(req, res, next) {
+    // הבדיקה מסתמכת על כך ש-authenticateToken רץ קודם ומילא את req.user
+    // ובתוך הטוקן יש שדה role
+    if (req.user && req.user.role === 'admin') {
+        next(); // המשתמש הוא מנהל - אפשר להמשיך
+    } else {
+        console.warn(`⛔ ניסיון גישה לממשק ניהול נחסם עבור: ${req.user ? req.user.phone : 'אורח'}`);
+        return res.status(403).json({ success: false, message: "אין הרשאת מנהל (Access Denied)" });
+    }
+}
+
 // === נתיב 1: בקשת קוד ושמירה ב-Firestore ===
 app.post('/api/auth/send-otp', async (req, res) => {
     const { phone } = req.body;
@@ -312,11 +327,57 @@ app.post('/api/maintenance/report', authenticateToken, async (req, res) => {
     }
 });
 
+// === נתיב ייעודי: יצירת בקשת מענה לפרט ===
+app.post('/api/maane/report', authenticateToken, async (req, res) => {
+    try {
+        const reportData = req.body;
+        const userPhone = req.user.phone; 
+        const cleanPhone = userPhone.replace(/\D/g, ''); 
+
+        // לוגיקה של מונה (Counter) - נשארת זהה לכולם כדי לשמור על רצף מספרי
+        const counterRef = db.collection('counters').doc(cleanPhone);
+
+        await db.runTransaction(async (t) => {
+            const counterDoc = await t.get(counterRef);
+            let newCount = 1;
+            if (counterDoc.exists) {
+                newCount = counterDoc.data().count + 1;
+            }
+
+            // יצירת מזהה ייחודי
+            const newDocId = `${cleanPhone}-${newCount}`;
+            
+            // שמירה לקולקציה הייעודית
+            const reportRef = db.collection('maane_laprat_requests').doc(newDocId);
+
+            const finalData = {
+                ...reportData,       // המידע מהטופס (מידות, סוג, הערות)
+                phone: userPhone,    // טלפון מהטוקן
+                id: newDocId,
+                ticketNumber: newCount,
+                type: 'maane_laprat', // סוג ראשי קבוע
+                collectionType: 'maane_laprat_requests', // חשוב לשליפה
+                status: 'open',
+                createdAt: admin.firestore.FieldValue.serverTimestamp()
+            };
+
+            t.set(reportRef, finalData);
+            t.set(counterRef, { count: newCount }, { merge: true });
+        });
+
+        console.log(`Maane Laprat request created: ${cleanPhone}`);
+        res.json({ success: true, message: "הבקשה נשלחה בהצלחה" });
+
+    } catch (error) {
+        console.error("Maane Laprat Save Error:", error);
+        res.status(500).json({ success: false, message: "שגיאה בשמירת הבקשה" });
+    }
+});
+
 // === שליפת היסטוריה מאובטחת (JWT) ===
 app.get('/api/maintenance/my-tickets', authenticateToken, async (req, res) => {
     
-    // קריטי: אנחנו לוקחים את הטלפון מהטוקן המאומת בלבד!
-    // השרת מתעלם ממה שהדפדפן מנסה לשלוח ב-URL.
+    // קריטי: לוקחים את הטלפון מהטוקן המאומת
     const phone = req.user.phone; 
 
     if (!phone) return res.status(400).json({ success: false, message: "שגיאת הזדהות" });
@@ -324,10 +385,12 @@ app.get('/api/maintenance/my-tickets', authenticateToken, async (req, res) => {
     try {
         console.log(`Fetching tickets for user: ${phone}`);
 
-        // ביצוע 2 שאילתות במקביל
-        const [maintenanceSnapshot, entrySnapshot] = await Promise.all([
+        // === ביצוע 3 שאילתות במקביל ===
+        const [maintenanceSnapshot, entrySnapshot, maaneSnapshot] = await Promise.all([
             db.collection('maintenance_reports').where('phone', '==', phone).get(),
-            db.collection('entry_permits').where('requestorPhone', '==', phone).get()
+            db.collection('entry_permits').where('requestorPhone', '==', phone).get(),
+            // הוספת הקולקציה החדשה:
+            db.collection('maane_laprat_requests').where('phone', '==', phone).get()
         ]);
 
         let allTickets = [];
@@ -356,12 +419,24 @@ app.get('/api/maintenance/my-tickets', authenticateToken, async (req, res) => {
                 id: doc.id,
                 ...data,
                 collectionType: 'entry',
-                type: 'entry_permit', // דריסה ליתר ביטחון
+                type: 'entry_permit', 
                 createdAtStr: parseDate(data.createdAt)
             });
         });
 
-        // 3. מיון לפי תאריך (מהחדש לישן)
+        // 3. עיבוד מענה לפרט (החלק החדש)
+        maaneSnapshot.forEach(doc => {
+            const data = doc.data();
+            allTickets.push({
+                id: doc.id,
+                ...data,
+                collectionType: 'maane_laprat',
+                // הסוג (type) כבר שמור בתוך הדאטה כ-'maane_laprat'
+                createdAtStr: parseDate(data.createdAt)
+            });
+        });
+
+        // 4. מיון הכל ביחד לפי תאריך (מהחדש לישן)
         allTickets.sort((a, b) => new Date(b.createdAtStr) - new Date(a.createdAtStr));
 
         res.json({ success: true, tickets: allTickets });
@@ -454,72 +529,97 @@ app.get('/api/resource/dashboard-html', authenticateToken, async (req, res) => {
     }
 });
 
-// === נתיב להגשת קבצי JS מוגנים ===
+// === נתיב 1: טעינת סקריפטים כלליים (private/js) ===
+// מטפל בבקשות כמו: /api/resource/js/binui.js
 app.get('/api/resource/js/:filename', authenticateToken, (req, res) => {
     const filename = req.params.filename;
     
-    // אבטחה בסיסית: מניעת יציאה מהתיקייה (Directory Traversal)
+    // הגנות אבטחה
     if (filename.includes('..') || filename.includes('/')) {
         return res.status(403).send("Access denied");
     }
 
-    const filePath = path.join(__dirname,'..', 'private', 'js', filename);
+    // בניית הנתיב: private/js/binui.js
+    const filePath = path.join(__dirname, '..', 'private', 'js', filename);
 
-    // בדיקה שהקובץ קיים
     if (!fs.existsSync(filePath)) {
+        console.error("General JS not found:", filePath);
         return res.status(404).send("File not found");
     }
 
-    // שליחת הקובץ
     res.sendFile(filePath);
 });
 
-// === נתיב אדמין: משיכת כל הנתונים (בינוי + אישורים) ===
+// === נתיב להגשת קבצי JS מוגנים ===
+// === נתיב לטעינת מודולים (קבצים בתוך תיקיות משנה) ===
+app.get('/api/resource/module/:category/:folder/:filename', authenticateToken, (req, res) => {
+    const { category, folder, filename } = req.params;
+
+    // הגנות אבטחה (מונע גלישה לתיקיות אחרות)
+    if (filename.includes('..') || folder.includes('..') || category.includes('..')) {
+        return res.status(403).send("Access denied");
+    }
+
+    // בניית הנתיב: private/maane-laprat/uniforms/uniforms.html
+    const filePath = path.join(__dirname, '..', 'private', category, folder, filename);
+
+    if (!fs.existsSync(filePath)) {
+        console.error("File not found:", filePath); // לוג שיעזור לך להבין איפה הוא מחפש
+        return res.status(404).send("Module not found");
+    }
+
+    res.sendFile(filePath);
+});
+
+// === נתיב אדמין: משיכת כל הנתונים (כולל מענה לפרט) ===
 app.get('/api/admin/all-data', authenticateToken, async (req, res) => {
     try {
-        console.log("Admin fetching all data...");
-
-        // שליפת שתי הקולקציות במקביל
-        const [maintenanceSnap, entrySnap] = await Promise.all([
+        // שליפת 3 הקולקציות במקביל
+        const [maintenanceSnap, entrySnap, maaneSnap] = await Promise.all([
             db.collection('maintenance_reports').get(),
-            db.collection('entry_permits').get()
+            db.collection('entry_permits').get(),
+            db.collection('maane_laprat_requests').get() // <-- החדש
         ]);
 
         let allTickets = [];
 
-        // פונקציית עזר לפרמוט תאריך
-        const parseDate = (timestamp) => {
-            if (!timestamp || !timestamp.toDate) return new Date().toISOString();
-            return timestamp.toDate().toISOString();
-        };
+        const parseDate = (t) => t && t.toDate ? t.toDate().toISOString() : new Date().toISOString();
 
-        // 1. עיבוד תקלות בינוי
+        // 1. תקלות
         maintenanceSnap.forEach(doc => {
             const d = doc.data();
-            allTickets.push({
-                id: doc.id,
-                ...d,
-                // אם אין סוג מוגדר, נגדיר כ'general'
-                type: d.type || 'general', 
-                // חשוב לדעת מאיפה זה הגיע כדי שנוכל לערוך אחר כך
+            allTickets.push({ 
+                id: doc.id, ...d, 
                 collectionType: 'maintenance_reports',
+                type: d.type || 'general',
                 createdAtStr: parseDate(d.createdAt)
             });
         });
 
-        // 2. עיבוד אישורי כניסה
+        // 2. אישורים
         entrySnap.forEach(doc => {
             const d = doc.data();
-            allTickets.push({
-                id: doc.id,
-                ...d,
-                type: 'entry_permit', // מזהה סוג קבוע
+            allTickets.push({ 
+                id: doc.id, ...d, 
                 collectionType: 'entry_permits',
+                type: 'entry_permit',
                 createdAtStr: parseDate(d.createdAt)
             });
         });
 
-        // 3. מיון לפי תאריך (החדש ביותר למעלה)
+        // 3. מענה לפרט (חדש!)
+        maaneSnap.forEach(doc => {
+            const d = doc.data();
+            allTickets.push({ 
+                id: doc.id, ...d, 
+                collectionType: 'maane_laprat_requests',
+                type: 'maane_laprat', // סוג ראשי
+                // subType מכיל את הסוג הספציפי (uniforms/shoes)
+                createdAtStr: parseDate(d.createdAt)
+            });
+        });
+
+        // מיון
         allTickets.sort((a, b) => new Date(b.createdAtStr) - new Date(a.createdAtStr));
 
         res.json({ success: true, tickets: allTickets });
@@ -529,9 +629,6 @@ app.get('/api/admin/all-data', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: "Server Error" });
     }
 });
-
-const fs = require('fs');
-const path = require('path');
 
 
 
