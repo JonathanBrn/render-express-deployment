@@ -153,7 +153,8 @@ function openTicketModal(ticket) {
     // כותרת עליונה קבועה
     const statusText = statusTranslation[ticket.status] || ticket.status;
     document.getElementById('modal-status').innerText = statusText;
-    document.getElementById('modal-id').innerText = ticket.id;
+    // מציג את ה-ID המלא (למשל 97250...-5)
+    document.getElementById('modal-id').innerText = ticket.id; 
 
     // תאריך יצירה
     let dateDisplay = '---';
@@ -194,7 +195,7 @@ function openTicketModal(ticket) {
 
         let dynamicRows = '';
         
-        // מדים
+        // לוגיקה לפי תת-סוג
         if (ticket.subType === 'uniforms') {
             dynamicRows = `
                 <div class="detail-row"><span class="detail-label">מגדר:</span> <span class="detail-value">${ticket.gender}</span></div>
@@ -202,21 +203,24 @@ function openTicketModal(ticket) {
                 <div class="detail-row"><span class="detail-label">מכנס:</span> <span class="detail-value">${ticket.pants}</span></div>
                 <div class="detail-row"><span class="detail-label">סופטשל:</span> <span class="detail-value">${ticket.softshell}</span></div>
             `;
-        } 
-        // נעליים
-        else if (ticket.subType === 'shoes') {
+        } else if (ticket.subType === 'shoes') {
             dynamicRows = `
                 <div class="detail-row"><span class="detail-label">מגדר:</span> <span class="detail-value">${ticket.gender}</span></div>
                 ${ticket.shoe_combat !== 'לא הוזמן' ? `<div class="detail-row"><span class="detail-label">נעלי חי"ר:</span> <span class="detail-value">${ticket.shoe_combat}</span></div>` : ''}
                 ${ticket.shoe_office !== 'לא הוזמן' ? `<div class="detail-row"><span class="detail-label">נעלי יח"ש:</span> <span class="detail-value">${ticket.shoe_office}</span></div>` : ''}
             `;
-        }
-        // כביסה
-        else if (ticket.subType === 'laundry') {
-            dynamicRows = `
+        } else if (ticket.subType === 'laundry') {
+             dynamicRows = `
                 <div class="detail-row"><span class="detail-label">סוג מדים:</span> <span class="detail-value">${ticket.uniform_type}</span></div>
-                <!-- שדה הערות מיוחד לכביסה -->
                 ${ticket.laundry_notes ? `<div class="detail-row full-width"><span class="detail-label">הערות כביסה:</span><p class="detail-text">${ticket.laundry_notes}</p></div>` : ''}
+            `;
+        } else if (ticket.subType === 'office_supplies') {
+             dynamicRows = `<div class="detail-row full-width"><span class="detail-label">פירוט ציוד:</span><p class="detail-text">${ticket.items_list || '-'}</p></div>`;
+        } else if (ticket.subType === 'furniture') {
+             dynamicRows = `
+                <div class="detail-row"><span class="detail-label">פריט:</span> <span class="detail-value">${ticket.furniture_type}</span></div>
+                <div class="detail-row"><span class="detail-label">כמות:</span> <span class="detail-value">${ticket.quantity}</span></div>
+                <div class="detail-row full-width"><span class="detail-label">הצדקה:</span><p class="detail-text">${ticket.justification || '-'}</p></div>
             `;
         }
 
@@ -245,7 +249,7 @@ function openTicketModal(ticket) {
         `;
 
     } else {
-        // === תקלות בינוי (ברירת מחדל) ===
+        // === תקלות בינוי ===
         const typeText = typeTranslation[ticket.type] || ticket.type;
         document.getElementById('modal-title').innerText = 'פרטי קריאת שירות';
 
@@ -264,7 +268,23 @@ function openTicketModal(ticket) {
         `;
     }
 
+    // ===========================================
+    //        הוספת כפתור הצ'אט (החלק החדש)
+    // ===========================================
+    htmlContent += `
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #f1f5f9; text-align: center;">
+            <button onclick="ChatSystem.open('${ticket.id}', '${ticket.collectionType}')" 
+                    class="submit-btn" 
+                    style="background: #3b82f6; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                <i class="fa-regular fa-comments"></i> צ'אט עם המוקד
+            </button>
+        </div>
+    `;
+
+    // הזרקת התוכן למודאל
     contentDiv.innerHTML = htmlContent;
+
+    // הצגת המודאל
     modal.classList.remove('hidden');
 }
 

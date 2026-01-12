@@ -112,6 +112,20 @@
                     }
                 }
             
+                // === טעינת מערכת הצ'אט (מנתיב ייעודי) ===
+                try {
+                    const chatRes = await fetch('/api/resource/chat/chat.js', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (chatRes.ok) {
+                        const chatCode = await chatRes.text();
+                        const script = document.createElement('script');
+                        script.textContent = chatCode;
+                        document.body.appendChild(script);
+                        console.log("✅ Chat system loaded");
+                    }
+                } catch (e) { console.error("Chat load failed", e); }
+                
                 // 4. סיום - אם אנחנו במצב משתמש רגיל, מציגים את התפריט
                 // (בודקים אם קיים main-menu בדף שהוזרק)
                 if (document.getElementById('main-menu') && typeof showScreen === 'function') {

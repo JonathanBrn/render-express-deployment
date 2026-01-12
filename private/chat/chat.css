@@ -1,0 +1,167 @@
+/* === Chat Overlay (Full Screen) === */
+.chat-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* רקע כהה חצי שקוף */
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    visibility: hidden;
+}
+
+.chat-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* === Chat Window === */
+.chat-window {
+    width: 100%;
+    height: 100%;
+    background: #f0f2f5; /* צבע רקע כמו וואטסאפ */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    /* בדסקטופ נעשה את זה כחלון צף, במובייל מסך מלא */
+}
+
+@media (min-width: 768px) {
+    .chat-window {
+        width: 450px;
+        height: 85vh;
+        max-height: 800px;
+        border-radius: 16px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        overflow: hidden;
+    }
+}
+
+/* === Header === */
+.chat-header {
+    background: #ffffff;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.header-info { display: flex; align-items: center; gap: 12px; }
+
+.avatar-circle {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+}
+
+.header-text { display: flex; flex-direction: column; }
+.chat-title { font-weight: 700; font-size: 1rem; color: #111827; }
+.chat-subtitle { font-size: 0.8rem; color: #6b7280; }
+
+.close-chat-btn {
+    background: none; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; padding: 5px;
+}
+.close-chat-btn:hover { color: #ef4444; }
+
+/* === Body (Messages) === */
+.chat-body {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px; /* טקסטורה עדינה */
+}
+
+/* בועות הודעה */
+.msg-bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    position: relative;
+    word-wrap: break-word;
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* הודעות שלי (User) */
+.msg-me {
+    align-self: flex-start; /* בעברית start זה ימין */
+    background: #dcf8c6; /* ירוק וואטסאפ */
+    color: #111827;
+    border-bottom-right-radius: 2px;
+}
+
+/* הודעות של הצד השני (Admin/User) */
+.msg-other {
+    align-self: flex-end; /* בעברית end זה שמאל */
+    background: #ffffff;
+    color: #1f2937;
+    border: 1px solid #e5e7eb;
+    border-bottom-left-radius: 2px;
+}
+
+.msg-time {
+    font-size: 0.7rem;
+    color: rgba(0,0,0,0.45);
+    float: left;
+    margin-top: 5px;
+    margin-right: 8px;
+}
+
+/* מנהל (הדגשה) */
+.msg-admin-badge {
+    font-size: 0.7rem; font-weight: bold; color: #2563eb; display: block; margin-bottom: 2px;
+}
+
+/* === Footer (Input) === */
+.chat-footer {
+    background: #ffffff;
+    padding: 15px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+#chat-input {
+    flex-grow: 1;
+    padding: 12px 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 25px;
+    background: #f9fafb;
+    outline: none;
+    font-size: 1rem;
+}
+#chat-input:focus { border-color: #3b82f6; background: #fff; }
+
+#chat-send-btn {
+    width: 45px; height: 45px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    transition: transform 0.1s;
+}
+#chat-send-btn:active { transform: scale(0.9); }
+
+.chat-loader { text-align: center; color: #6b7280; margin-top: 20px; }

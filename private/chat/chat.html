@@ -1,0 +1,35 @@
+<div id="chat-overlay" class="chat-overlay hidden">
+    <div class="chat-window">
+        
+        <!-- כותרת הצ'אט -->
+        <header class="chat-header">
+            <div class="header-info">
+                <div class="avatar-circle">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <div class="header-text">
+                    <span class="chat-title" id="chat-title-text">צ'אט תמיכה</span>
+                    <span class="chat-subtitle" id="chat-subtitle">#<span id="chat-ticket-id"></span> • <span id="connection-status">מחובר</span></span>
+                </div>
+            </div>
+            <button class="close-chat-btn" onclick="ChatSystem.close()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </header>
+
+        <!-- אזור ההודעות -->
+        <div id="chat-messages-area" class="chat-body">
+            <!-- ההודעות יוזרקו לכאן -->
+            <div class="chat-loader"><i class="fa-solid fa-circle-notch fa-spin"></i> טוען שיחה...</div>
+        </div>
+
+        <!-- אזור ההקלדה -->
+        <form class="chat-footer" onsubmit="ChatSystem.sendMessage(event)">
+            <input type="text" id="chat-input" placeholder="כתוב הודעה..." autocomplete="off">
+            <button type="submit" id="chat-send-btn">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </form>
+
+    </div>
+</div>
