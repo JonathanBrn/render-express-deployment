@@ -693,6 +693,39 @@ app.get('/api/admin/all-data', authenticateToken, async (req, res) => {
     }
 });
 
+// === נתיב אדמין: עדכון סטטוס והערות ===
+app.post('/api/admin/update-ticket', authenticateToken, async (req, res) => {
+    // 1. בדיקת הרשאות מנהל
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: "אין הרשאות ניהול" });
+    }
+
+    const { collectionType, ticketId, status, adminNotes } = req.body;
+
+    if (!collectionType || !ticketId) {
+        return res.status(400).json({ success: false, message: "חסרים נתונים מזהים" });
+    }
+
+    try {
+        // 2. ביצוע העדכון ב-Firestore
+        // אנו משתמשים ב-collectionType שהגיע מהפרונט (למשל 'maintenance_reports' או 'entry_permits')
+        await db.collection(collectionType).doc(ticketId).update({
+            status: status,
+            adminNotes: adminNotes,
+            lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+            updatedBy: req.user.phone
+        });
+
+        console.log(`Ticket ${ticketId} updated by admin ${req.user.phone}`);
+        res.json({ success: true, message: "הקריאה עודכנה בהצלחה" });
+
+    } catch (error) {
+        console.error("Admin Update Error:", error);
+        res.status(500).json({ success: false, message: "שגיאה בעדכון הנתונים" });
+    }
+});
+
+
 // ==========================================
 //               CHAT SYSTEM
 // ==========================================

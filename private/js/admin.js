@@ -109,9 +109,22 @@ function filterAdminTickets() {
     const filtered = adminTickets.filter(t => {
         const textMatch = JSON.stringify(t).toLowerCase().includes(search);
         
+        // === התיקון מתחיל כאן ===
         let typeMatch = true;
-        if (typeFilter === 'entry_permit') typeMatch = (t.type === 'entry_permit');
-        if (typeFilter === 'maintenance') typeMatch = (MAINTENANCE_SUBTYPES.includes(t.type) || t.type === 'maane_laprat');
+
+        if (typeFilter === 'entry_permit') {
+            // רק אישורי כניסה
+            typeMatch = (t.type === 'entry_permit');
+        } 
+        else if (typeFilter === 'maintenance') {
+            // רק בינוי ואחזקה (בלי מענה לפרט!)
+            typeMatch = MAINTENANCE_SUBTYPES.includes(t.type); 
+        } 
+        else if (typeFilter === 'maane_laprat') {
+            // רק מענה לפרט (חדש!)
+            typeMatch = (t.type === 'maane_laprat');
+        }
+        // === התיקון מסתיים כאן ===
 
         const statusMatch = statusFilter === 'all' || t.status === statusFilter;
 
