@@ -228,88 +228,123 @@
 
     <!-- === מסך 3: טופס אישור כניסה === -->
     <div id="entry-permit-screen" class="screen hidden">
-        <div class="back-btn" onclick="showScreen('main-menu')">
-            <i class="fa-solid fa-arrow-right"></i> חזרה לתפריט
+    <div class="back-btn" onclick="showScreen('main-menu')">
+        <i class="fa-solid fa-arrow-right"></i> חזרה לתפריט
+    </div>
+    
+    <h2 class="form-title">בקשת אישור כניסה</h2>
+    <p class="form-subtitle">הזינו את פרטי המבקר</p>
+
+    <form class="modern-form" onsubmit="submitEntryPermit(event)">
+        
+        <!-- 1. בחירת סוג אוכלוסיה (כמו קודם) -->
+        <label style="font-weight:600; margin-bottom:10px; display:block;">סוג אוכלוסיה</label>
+        <input type="hidden" id="ep_status" required>
+        
+        <div class="selection-grid">
+            <div class="selection-card" onclick="selectEpStatus('soldier', this)">
+                <i class="fa-solid fa-person-military-rifle"></i>
+                <span class="selection-label">איש צבא</span>
+            </div>
+            <div class="selection-card" onclick="selectEpStatus('civilian', this)">
+                <i class="fa-solid fa-briefcase"></i>
+                <span class="selection-label">עובד צה"ל</span>
+            </div>
+            <div class="selection-card" onclick="selectEpStatus('contractor', this)">
+                <i class="fa-solid fa-truck-fast"></i>
+                <span class="selection-label">ספק / קבלן</span>
+            </div>
+            <div class="selection-card" onclick="selectEpStatus('guest', this)">
+                <i class="fa-solid fa-user"></i>
+                <span class="selection-label">אזרח / אורח</span>
+            </div>
         </div>
-        <h2 class="form-title">בקשת אישור כניסה</h2>
-        <p class="form-subtitle">מלאו את פרטי המבקר לצורך קבלת אישור</p>
-        <form class="modern-form" onsubmit="submitEntryPermit(event)">
-            <div class="form-group">
-                <label>שם מלא</label>
-                <div class="input-with-icon">
-                    <i class="fa-regular fa-user"></i>
-                    <input id="ep_fullname" type="text" placeholder="שם פרטי ושם משפחה" required>
-                </div>
+
+        <!-- 2. פרטים אישיים -->
+        <div class="form-group">
+            <label>פרטים אישיים</label>
+            <div class="input-with-icon" style="margin-bottom: 10px;">
+                <i class="fa-regular fa-user"></i>
+                <input id="ep_fullname" type="text" placeholder="שם מלא" required>
             </div>
             <div class="grid-2-cols">
-                <div class="form-group">
-                    <label>מס' אישי / ת.ז</label>
-                    <input id="ep_id_num" type="tel" placeholder="מספר זיהוי" required>
+                <input id="ep_id_num" type="tel" placeholder="ת.ז / מ.א" required>
+                <input id="ep_phone" type="tel" placeholder="נייד (050...)" required>
+            </div>
+        </div>
+
+        <!-- 3. שאלת סיווג בטחוני -->
+        <div class="form-group">
+            <label>האם נדרש סיווג בטחוני?</label>
+            <input type="hidden" id="ep_security_required" value="no">
+            <input type="hidden" id="ep_security_level" value="none">
+
+            <div class="toggle-wrapper">
+                <div class="toggle-option active-no" id="btn-sec-no" onclick="toggleSecurity(false)">לא</div>
+                <div class="toggle-option" id="btn-sec-yes" onclick="toggleSecurity(true)">כן</div>
+            </div>
+
+            <!-- החלק שנפתח רק אם בחרו כן -->
+            <div id="security-section" class="conditional-section">
+                <label style="font-size:0.9rem; margin-bottom:8px; display:block;">בחר רמת סיווג:</label>
+                <div class="security-scale">
+                    <!-- 5 הכי נמוך, 1 הכי גבוה -->
+                    <div class="scale-num" onclick="selectSecurityNum(5, this)">5</div>
+                    <div class="scale-num" onclick="selectSecurityNum(4, this)">4</div>
+                    <div class="scale-num" onclick="selectSecurityNum(3, this)">3</div>
+                    <div class="scale-num" onclick="selectSecurityNum(2, this)">2</div>
+                    <div class="scale-num" onclick="selectSecurityNum(1, this)">1</div>
                 </div>
-                <div class="form-group">
-                    <label>טלפון נייד</label>
-                    <input id="ep_phone" type="tel" placeholder="050..." required>
+                <div class="scale-legend">
+                    <span>נמוך</span>
+                    <span>גבוה</span>
                 </div>
             </div>
-            <div class="grid-2-cols">
-                <div class="form-group">
-                    <label>שיוך אוכלוסיה</label>
-                    <div class="select-wrapper">
-                        <select id="ep_status" required>
-                            <option value="" disabled selected>בחר...</option>
-                            <option value="soldier">איש צבא</option>
-                            <option value="civilian">אזרח עובד צה"ל</option>
-                            <option value="contractor">קבלן / ספק</option>
-                            <option value="guest">אזרח / אורח</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down select-arrow"></i>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>סיווג בטחוני</label>
-                    <div class="select-wrapper">
-                        <select id="ep_security" required>
-                            <option value="" disabled selected>בחר סיווג...</option>
-                            <option value="5">5</option>
-                            <option value="4">4</option>
-                            <option value="3">3</option>
-                            <option value="2">2</option>
-                            <option value="1">1</option>
-                            <option value="none">ללא סיווג</option>
-                        </select>
-                        <i class="fa-solid fa-chevron-down select-arrow"></i>
-                    </div>
-                </div>
+        </div>
+
+        <!-- 4. שאלת רכב -->
+        <div class="form-group">
+            <label>האם נדרש אישור כניסה רכוב?</label>
+            <input type="hidden" id="ep_vehicle_required" value="no">
+
+            <div class="toggle-wrapper">
+                <div class="toggle-option active-no" id="btn-veh-no" onclick="toggleVehicle(false)">לא</div>
+                <div class="toggle-option" id="btn-veh-yes" onclick="toggleVehicle(true)">כן</div>
             </div>
-            <div class="grid-2-cols">
-                <div class="form-group">
-                    <label>מספר רכב</label>
-                    <input id="ep_car_num" type="text" placeholder="אם קיים">
-                </div>
-                <div class="form-group">
-                    <label>צבע רכב</label>
-                    <input id="ep_car_color" type="text" placeholder="לדוגמה: לבן">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>מטרת הביקור</label>
-                <textarea id="ep_purpose" rows="2" placeholder="פירוט סיבת הכניסה..." required></textarea>
-            </div>
-            <div class="form-group">
-                <label>טווח תאריכים מבוקש</label>
+
+            <!-- החלק שנפתח רק אם בחרו כן -->
+            <div id="vehicle-section" class="conditional-section">
                 <div class="grid-2-cols">
-                    <div class="input-with-icon">
-                        <input id="ep_date_start" type="text" onfocus="(this.type='date')" placeholder="מתאריך">
+                    <div class="form-group">
+                        <label>מספר רכב</label>
+                        <input id="ep_car_num" type="text" placeholder="12-345-67">
                     </div>
-                    <div class="input-with-icon">
-                        <input id="ep_date_end" type="text" onfocus="(this.type='date')" placeholder="עד תאריך">
+                    <div class="form-group">
+                        <label>צבע</label>
+                        <input id="ep_car_color" type="text" placeholder="למשל: לבן">
                     </div>
                 </div>
             </div>
-            <button type="submit" class="submit-btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                שלח בקשת כניסה <i class="fa-solid fa-check"></i>
-            </button>
-        </form>
+        </div>
+
+        <!-- 5. תאריכים ומטרה -->
+        <div class="form-group">
+            <label>טווח תאריכים</label>
+            <div class="grid-2-cols">
+                <input id="ep_date_start" type="text" onfocus="(this.type='date')" placeholder="מ-" required>
+                <input id="ep_date_end" type="text" onfocus="(this.type='date')" placeholder="עד-" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>מטרת הביקור</label>
+            <textarea id="ep_purpose" rows="2" placeholder="פירוט..." required></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn">
+            שלח בקשה <i class="fa-solid fa-paper-plane"></i>
+        </button>
+    </form>
     </div>
 
     <!-- === מסך אחרון: הפניות שלי === -->

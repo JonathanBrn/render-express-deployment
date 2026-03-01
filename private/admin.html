@@ -318,6 +318,144 @@
             .adm-select { width: 100%; }
             .info-grid { grid-template-columns: 1fr; }
         }
+
+        /* === Admin Tabs === */
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    background: white;
+    padding: 5px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    width: fit-content;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #64748b;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.tab-btn.active {
+    background: #3b82f6; /* Blue */
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* === Views Visibility === */
+.admin-view {
+    animation: fadeIn 0.3s ease;
+}
+.admin-view.hidden {
+    display: none;
+}
+
+/* === Users Table === */
+.users-list-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow-x: auto; /* למובייל */
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px; /* שלא ימעך במובייל */
+}
+
+.modern-table th {
+    background: #f8fafc;
+    text-align: right;
+    padding: 15px;
+    font-size: 0.85rem;
+    color: #64748b;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modern-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.modern-table tr:last-child td { border-bottom: none; }
+.modern-table tr:hover { background: #fcfcfc; }
+
+/* תגיות תפקיד בטבלה */
+.role-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.role-super_admin { background: #ede9fe; color: #6d28d9; } /* Purple */
+.role-maintenance_manager { background: #ffedd5; color: #c2410c; } /* Orange */
+.role-logistics_manager { background: #dcfce7; color: #15803d; } /* Green */
+.role-user { background: #f1f5f9; color: #475569; } /* Gray */
+
+/* כפתורי פעולה בטבלה */
+.action-btn {
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-left: 5px;
+    transition: 0.2s;
+}
+.action-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+
+/* === Roles Cards === */
+.roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.role-card {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s;
+}
+.role-card:hover { transform: translateY(-3px); border-color: #cbd5e1; }
+
+.role-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+.role-icon { font-size: 1.5rem; }
+.role-icon.super-admin { color: #9333ea; }
+.role-icon.maint-admin { color: #d97706; }
+.role-icon.log-admin { color: #10b981; }
+
+.perm-tag {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-family: monospace;
+    margin-top: 10px;
+}
     </style>
 
     <div class="adm-navbar">
@@ -331,62 +469,181 @@
     </div>
 
     <div class="admin-container">
-        
-        <!-- Dashboard Stats -->
-        <div class="stats-row">
-            <div class="stat-card" style="background-color: #dfebff; border-right: 4px solid #3b82f6;">
-                <span class="stat-value" id="st-total">0</span>
-                <span class="stat-label">סה"כ פניות במערכת</span>
-                <i class="fa-solid fa-list stat-icon"></i>
-            </div>
-            <div class="stat-card" style="background-color: #ffd7d7; border-right: 4px solid #ef4444;">
-                <span class="stat-value" id="st-open">0</span>
-                <span class="stat-label">ממתינות לטיפול</span>
-                <i class="fa-regular fa-clock stat-icon"></i>
-            </div>
-            <div class="stat-card" style="background-color: #d7fff2; border-right: 4px solid #10b981;">
-                <span class="stat-value" id="st-closed">0</span>
-                <span class="stat-label">טופלו בהצלחה</span>
-                <i class="fa-solid fa-check-circle stat-icon"></i>
-            </div>
+    
+    <!-- Super Admin Navigation Tabs -->
+    <div class="admin-tabs">
+        <button class="tab-btn active" onclick="switchAdminTab('tickets')">
+            <i class="fa-solid fa-list-check"></i> ניהול פניות
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('users')">
+            <i class="fa-solid fa-users-gear"></i> ניהול משתמשים
+        </button>
+        <button class="tab-btn" onclick="switchAdminTab('roles')">
+            <i class="fa-solid fa-shield-halved"></i> הגדרת הרשאות
+        </button>
+    </div>
+
+    <!-- VIEW 1: ניהול פניות (המקורי) -->
+    <div id="view-tickets" class="admin-view active">
+        <!-- סטטיסטיקות -->
+        <!-- בתוך admin.html -->
+    <div class="stats-row">
+        <!-- כרטיס 1: סה"כ -->
+        <div class="stat-card" style="background-color: #dfebff; border-right: 4px solid #3b82f6;">
+            <span class="stat-value" id="st-total">0</span>
+            <span class="stat-label">סה"כ פניות</span>
+            <i class="fa-solid fa-list stat-icon"></i>
         </div>
+
+        <!-- כרטיס 2: פתוח -->
+        <div class="stat-card" style="background-color: #ffd7d7; border-right: 4px solid #ef4444;">
+            <span class="stat-value" id="st-open">0</span>
+            <span class="stat-label">ממתינות לטיפול</span>
+            <i class="fa-regular fa-clock stat-icon"></i>
+        </div>
+
+        <!-- כרטיס 3: סגור (היה חסר?) -->
+        <div class="stat-card" style="background-color: #dcfce7; border-right: 4px solid #10b981;">
+            <span class="stat-value" id="st-closed">0</span>
+            <span class="stat-label">טופלו בהצלחה</span>
+            <i class="fa-solid fa-check-circle stat-icon"></i>
+        </div>
+    </div>
         
-        <!-- Toolbar -->
+        <!-- סרגל סינון -->
         <div class="filters-bar">
             <div class="search-wrapper">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="adm-search" class="adm-input" placeholder="חיפוש חופשי (שם, טלפון, תוכן פנייה...)" onkeyup="filterAdminTickets()">
+                <input type="text" id="adm-search" class="adm-input" placeholder="חיפוש חופשי..." onkeyup="filterAdminTickets()">
             </div>
-            
             <select id="filter-type" class="adm-select" onchange="filterAdminTickets()">
                 <option value="all">כל הסוגים</option>
                 <option value="entry_permit">אישורי כניסה</option>
                 <option value="maintenance">בינוי ואחזקה</option>
-                <!-- הוספנו את השורה הזו: -->
-                <option value="maane_laprat">מענה לפרט / לוגיסטיקה</option>
+                <option value="maane_laprat">לוגיסטיקה</option>
             </select>
-
             <select id="filter-status" class="adm-select" onchange="filterAdminTickets()">
                 <option value="all">כל הסטטוסים</option>
                 <option value="open">🟢 פתוח</option>
-                <option value="in_progress">🟠 בטיפול</option>
                 <option value="closed">🔵 סגור</option>
             </select>
+            <button onclick="fetchAdminData()" class="submit-btn refresh-btn"><i class="fa-solid fa-rotate"></i></button>
+        </div>
 
-            <button onclick="fetchAdminData()" class="submit-btn" style="width:auto; margin:0; padding: 0 20px;">
-                <i class="fa-solid fa-rotate"></i>
+        <!-- רשת הכרטיסים -->
+        <div id="tickets-grid" class="tickets-grid">
+            <!-- כאן מוזרקים הטיקטים -->
+        </div>
+    </div>
+
+    <!-- VIEW 2: ניהול משתמשים (חדש!) -->
+    <div id="view-users" class="admin-view hidden">
+        <div class="filters-bar">
+            <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="user-search" class="adm-input" placeholder="חפש משתמש לפי שם או טלפון..." onkeyup="filterUsers()">
+            </div>
+            <button class="submit-btn" onclick="openAddUserModal()">
+                <i class="fa-solid fa-user-plus"></i> הוסף מנהל
             </button>
         </div>
-        <br>
-        <!-- Tickets Content -->
-        <div id="admin-container" class="tickets-grid">
-            <!-- Content injected by JS -->
-            <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #94a3b8;">
-                <i class="fa-solid fa-circle-notch fa-spin fa-3x"></i>
-                <p style="margin-top: 15px;">טוען נתונים בזמן אמת...</p>
+
+        <div class="users-list-container">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>שם משתמש</th>
+                        <th>טלפון</th>
+                        <th>תפקיד (Role)</th>
+                        <th>סטטוס</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <!-- תוכן יוזרק ב-JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- User Edit Modal -->
+<div id="user-modal" class="modal-overlay hidden">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>ניהול משתמש</h3>
+            <i class="fa-solid fa-xmark close-modal" onclick="closeUserModal()"></i>
+        </div>
+        <div class="modal-body">
+            <form class="modern-form" onsubmit="saveUser(event)">
+                <div class="form-group">
+                    <label>מספר טלפון</label>
+                    <input type="tel" id="usr-phone" required placeholder="050...">
+                </div>
+                <div class="form-group">
+                    <label>שם מלא</label>
+                    <input type="text" id="usr-name" required placeholder="ישראל ישראלי">
+                </div>
+                <div class="form-group">
+                    <label>תפקיד</label>
+                    <div class="select-wrapper">
+                        <select id="usr-role" class="adm-select" style="width:100%">
+                            <option value="user">משתמש רגיל</option>
+                            <option value="maintenance_manager">מנהל בינוי</option>
+                            <option value="logistics_manager">מנהל לוגיסטיקה</option>
+                            <option value="super_admin">מנהל מערכת (Super Admin)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="usr-active" checked style="width: auto;">
+                    <label for="usr-active" style="margin:0">משתמש פעיל</label>
+                </div>
+                <button type="submit" class="submit-btn">שמור</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <!-- VIEW 3: הגדרת הרשאות (חדש!) -->
+    <div id="view-roles" class="admin-view hidden">
+        <div class="roles-grid">
+            <!-- כרטיס תפקיד לדוגמה -->
+            <div class="role-card">
+                <div class="role-header">
+                    <i class="fa-solid fa-crown role-icon super-admin"></i>
+                    <h3>Super Admin</h3>
+                </div>
+                <p>גישה מלאה לכל חלקי המערכת, ניהול משתמשים ועריכת הגדרות.</p>
+                <div class="role-perms">
+                    <span class="perm-tag">הכל (*)</span>
+                </div>
+            </div>
+
+            <div class="role-card">
+                <div class="role-header">
+                    <i class="fa-solid fa-hammer role-icon maint-admin"></i>
+                    <h3>מנהל בינוי</h3>
+                </div>
+                <p>טיפול בתקלות בינוי, חשמל, אינסטלציה ומיזוג.</p>
+                <div class="role-perms">
+                    <span class="perm-tag">maintenance_reports</span>
+                </div>
+            </div>
+
+            <div class="role-card">
+                <div class="role-header">
+                    <i class="fa-solid fa-box-open role-icon log-admin"></i>
+                    <h3>מנהל לוגיסטיקה</h3>
+                </div>
+                <p>טיפול בבקשות ציוד, מדים, כביסה וריהוט.</p>
+                <div class="role-perms">
+                    <span class="perm-tag">maane_laprat_requests</span>
+                </div>
             </div>
         </div>
     </div>
+
+</div>
 
     <!-- Edit Modal -->
     <div id="admin-modal" class="modal-overlay hidden" onclick="if(event.target.id==='admin-modal') closeAdminModal()">
